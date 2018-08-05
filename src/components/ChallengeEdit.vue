@@ -1,7 +1,15 @@
 <template>
-    <div>
-        <autocomplete :items="[ 'Apple', 'Banana', 'Orange', 'Mango', 'Pear', 'Peach', 'Grape', 'Tangerine', 'Pineapple']" @selection="onItemChanged"></autocomplete>
-    </div>
+    <b-row>
+        <b-col></b-col>
+        <b-col>
+            <h5>{{challenge.text}}</h5>
+        </b-col>
+        <b-col>
+        <autocomplete :initialSelected="challenge.userResponse.id" :initialDisplay="challenge.userResponse.text" :items="challenge.responses"
+            displayProp="text" valueProp="id" @selection="onItemChanged" isRequired=true></autocomplete>
+        </b-col>
+        <b-col class='col'></b-col>
+    </b-row>
 </template>
 
 <script>
@@ -10,12 +18,11 @@
     export default {
         props: ['challenge'],
         data() {
-            return {
-            }
+            return {}
         },
         methods: {
             onItemChanged: function (item) {
-                console.log(item);
+                this.challenge.userResponse = item;
             }
         },
         components: {

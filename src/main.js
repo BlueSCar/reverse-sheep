@@ -1,4 +1,5 @@
 import Vue from 'vue';
+Vue.config.devtools = true
 
 import BootstrapVue from 'bootstrap-vue';
 import "bootstrap/dist/css/bootstrap.min.css"

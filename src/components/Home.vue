@@ -1,14 +1,32 @@
 <template>
-  <div>
-    <h3 class='justify-content-center'>
-      {{user.username}}
-      <small class="text-muted">Week {{week}}</small>
-    </h3>
-    <div class='challenge-form'>
-      <challenge-edit v-for="challenge in challenges" v-bind:key="challenge.id" :challenge="challenge">
-      </challenge-edit>
+  <b-container>
+    <div v-if='challenges'>
+      <h3 class='justify-content-center'>
+        {{user.username}}
+        <small class="text-muted">Week {{week}}</small>
+      </h3>
+      <b-form class='challenge-form' @submit="submitResponses">
+        <challenge-edit class='challenge-edit' v-for="challenge in challenges" v-bind:key="challenge.id" :challenge="challenge">
+        </challenge-edit>
+        <b-row v-if='submitted'>
+          <b-col></b-col>
+          <b-alert variant="success" show>Responses saved successfully!</b-alert>
+          <b-col></b-col>
+        </b-row>
+        <b-row>
+          <b-col></b-col>
+          <button class="btn btn-primary" type="submit">Submit</button>
+          <b-col></b-col>
+        </b-row>
+      </b-form>
     </div>
-  </div>
+    <div v-if='!challenges'>
+      <h3 class='justify-content-center'>
+        {{user.username}}
+      </h3>
+      <b-alert>No challenges submitted yet for this week. Please check back later.</b-alert>
+    </div>
+  </b-container>
 </template>
 
 <script>
@@ -26,7 +44,8 @@
         },
         week: null,
         roundId: null,
-        challenges: null
+        challenges: null,
+        submitted: false
       }
     },
     created() {
@@ -36,11 +55,33 @@
         this.roundId = response.data.roundId;
         this.challenges = response.data.challenges;
       }).catch(err => {
-        console.log(err);
+        console.error(err);
       });
+    },
+    methods: {
+      submitResponses: function (ev) {
+        ev.preventDefault();
+
+        this.$http.post('/api/responses', {
+          responses: this.challenges.map(c => {
+            return {
+              id: c.id,
+              responseId: c.userResponse.id
+            }
+          })
+        }).then(res => {
+          this.submitted = true;
+        }).catch(err => {
+          console.err(err);
+        });
+      }
     }
   }
 </script>
 
 <style lang="scss">
+  .challenge-edit {
+    margin-top: 15px;
+    margin-bottom: 15px;
+  }
 </style>

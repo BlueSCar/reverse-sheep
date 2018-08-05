@@ -1,13 +1,12 @@
 <template>
     <div class="autocomplete">
-        <input class='form-control' type="text" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.enter="onEnter"
-        />
+        <input class='form-control' type="text" @focus="onFocus" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.enter="onEnter" :required="isRequired" />
         <ul id="autocomplete-results" v-show="isOpen" class="autocomplete-results">
             <li class="loading" v-if="isLoading">
                 Loading results...
             </li>
             <li v-else v-for="(result, i) in results" :key="i" @click="setResult(result)" class="autocomplete-result" :class="{ 'is-active': i === arrowCounter }">
-                {{ result }}
+                {{ displayProp ? result[displayProp] : result }}
             </li>
         </ul>
     </div>
@@ -23,20 +22,46 @@
                 required: false,
                 default: () => [],
             },
+            displayProp: {
+                type: String,
+                require: false,
+                default: null
+            },
+            valueProp: {
+                type: String,
+                require: false,
+                default: null
+            },
             isAsync: {
                 type: Boolean,
                 required: false,
                 default: false,
             },
+            initialDisplay: {
+                type: String,
+                required: false,
+                default: ""
+            },
+            initialSelected: {
+                type: String,
+                required: false,
+                default: null
+            },
+            isRequired: {
+                type: Boolean,
+                required: false,
+                default: false
+            }
         },
 
         data() {
             return {
                 isOpen: false,
                 results: [],
-                search: '',
+                search: this.initialDisplay,
                 isLoading: false,
                 arrowCounter: 0,
+                selected: this.initialSelected
             };
         },
 
@@ -58,14 +83,25 @@
             filterResults() {
                 // first uncapitalize all the things
                 this.results = this.items.filter((item) => {
-                    return item.toLowerCase().indexOf(this.search.toLowerCase()) > -1;
+                    let searchable = this.displayProp ? item[this.displayProp] : item;
+                    if (searchable == null) {
+                        searchable = "";
+                    }
+
+                    if (!this.search) {
+                        this.search = "";
+                    }
+
+                    return searchable.toLowerCase().indexOf(this.search.toLowerCase()) > -1;
                 });
             },
             setResult(result) {
-                this.search = result;
+                this.search = this.displayProp ? result[this.displayProp] : result;
                 this.isOpen = false;
 
-                this.$emit('input', result)
+                this.selected = this.valueProp ? result[this.valueProp] : result;
+
+                this.$emit('selection', result);
             },
             onArrowDown(evt) {
                 if (this.arrowCounter < this.results.length) {
@@ -78,8 +114,10 @@
                 }
             },
             onEnter() {
-                this.search = this.results[this.arrowCounter];
-                this.isOpen = false;
+                let result = this.results[this.arrowCounter];
+
+                this.setResult(result);
+                
                 this.arrowCounter = -1;
             },
             handleClickOutside(evt) {
@@ -87,6 +125,10 @@
                     this.isOpen = false;
                     this.arrowCounter = -1;
                 }
+            },
+            onFocus() {
+                this.isOpen = true;
+                this.filterResults();
             }
         },
         watch: {
@@ -110,22 +152,19 @@
 <style lang="scss">
     .autocomplete {
         position: relative;
-        
-        input.form-control {
-            width: 250px;
-        }
+        margin: auto;
     }
 
     .autocomplete-results {
         padding: 0;
         margin: 0;
         border: 1px solid #eeeeee;
-        height: 120px;
+        height: 200px;
         overflow: auto;
         position: absolute;
         z-index: 1;
         background: #FFF;
-        width: 250px;
+        width: 93%;
     }
 
     .autocomplete-result {

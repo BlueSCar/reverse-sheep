@@ -52,7 +52,7 @@ module.exports = (db, passport) => {
       url: req.url
     }).then((app) => {
       const context = {
-        title: `${team} Reverse Shrrp`,
+        title: `${team} Reverse Sheep`,
         meta: `
             <meta description="${team.toLowerCase()} cfb reverse sheep">
         `
