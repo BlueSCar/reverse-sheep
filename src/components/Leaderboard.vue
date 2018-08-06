@@ -1,8 +1,16 @@
 <template>
     <b-container>
+        <h3 class='justify-content-center'>
+            Leaderboard
+        </h3>
         <b-tabs pills vertical @input="refreshData">
             <b-tab v-for="week in weeks" :title="getTitle(week)" :key="week">
-                <b-table :items="scoreboard"></b-table>
+                <div v-if='showScoreboard'>
+                    <b-table :items="scoreboard"></b-table>
+                </div>
+                <div v-else>
+                    <b-alert variant='info' show>No score data yet</b-alert>
+                </div>
             </b-tab>
         </b-tabs>
     </b-container>
@@ -14,6 +22,11 @@
             return {
                 weeks: [],
                 scoreboard: []
+            }
+        },
+        computed: {
+            showScoreboard: function () {
+                return this.scoreboard && this.scoreboard.length > 0;
             }
         },
         created() {
@@ -32,11 +45,15 @@
                 if (index != null) {
                     let week = this.weeks[index];
 
-                    let params = week != 'Total' ? { week: week } : {};
-                    this.$http.get('/api/scoreboard', params).then((response) => {
+                    let params = week != 'Total' ? {
+                        week: week
+                    } : {};
+                    this.$http.get('/api/scoreboard', {
+                        params: params
+                    }).then((response) => {
                         this.scoreboard = response.data.scoreboard;
                         let userRow = this.scoreboard.find(s => s.username == response.data.username);
-                        if (userRow){
+                        if (userRow) {
                             userRow._rowVariant = 'info';
                         }
                     });

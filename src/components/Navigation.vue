@@ -9,7 +9,7 @@
                         <router-link to="/">Home</router-link>
                     </b-nav-item>
                     <b-nav-item>
-                        <router-link to="/history">Vote History</router-link>
+                        <router-link to="/history">User History</router-link>
                     </b-nav-item>
                     <b-nav-item>
                         <router-link to="/leaderboard">Leaderboard</router-link>

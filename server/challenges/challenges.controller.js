@@ -24,7 +24,6 @@ module.exports = (db) => {
                 let weeks = await db.any(`
                 SELECT DISTINCT week
                 FROM round
-                WHERE deadline < (now() at time zone 'utc')
                 ORDER BY week DESC
             `).catch(err => {
                     console.error(err);
@@ -38,8 +37,10 @@ module.exports = (db) => {
         },
         getScoreboard: async (req, res) => {
             if (req.isAuthenticated()) {
+                let scoreboard = [];
+
                 if (req.query.week) {
-                    let scoreboard = await db.any(`
+                    scoreboard = await db.any(`
                         WITH user_points AS( 
                             WITH challenge_points AS (
                                 WITH user_responses AS (
@@ -75,7 +76,7 @@ module.exports = (db) => {
                         scoreboard
                     });
                 } else {
-                    let scoreboard = await db.any(`
+                    scoreboard = await db.any(`
                         WITH user_points AS( 
                             WITH challenge_points AS (
                                 WITH user_responses AS (
@@ -202,9 +203,9 @@ module.exports = (db) => {
                 res.sendStatus(401);
             }
         },
-        getUserResponses: (req, res) => {
+        getUserResponses: async (req, res) => {
             if (req.isAuthenticated()) {
-                let responses = db.any(`
+                let responses = await db.any(`
                     WITH challenge_points AS (
                         WITH user_responses AS (
                             SELECT c.id as challenge, COALESCE(cr.correct, false) as correct, COUNT(ucr.id) as total
@@ -219,7 +220,7 @@ module.exports = (db) => {
                         FROM user_responses
                         GROUP BY challenge
                     )
-                    SELECT c.id, c.text as challenge, cr.text as response, COALESCE(cr.points, cp.max_points) as points
+                    SELECT c.id, c.text as challenge, cr.text as response, COALESCE(cr.points, cp.max_points) as points, COALESCE(cr.correct, false) as correct
                     FROM round r
                         INNER JOIN challenge c ON r.id = c.round_id
                         INNER JOIN challenge_points cp ON c.id = cp.challenge
@@ -227,7 +228,10 @@ module.exports = (db) => {
                         LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id AND ucr.user_id = $2
                     WHERE r.week = $1
                 `, [req.query.week, req.user.id]);
-                res.send(responses);
+                res.send({
+                    username: req.user.username,
+                    responses: responses
+                });
             } else {
                 res.sendStatus(403);
             }
