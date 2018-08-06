@@ -34,7 +34,7 @@ module.exports = (passport, db) => {
                         user.username = profile.username;
                         user.discord = profile.id;
                         user.member = member;
-                    } else {
+                    } else if (!user) {
                         await db.none(`
                             INSERT INTO "user" (username, discord_id, is_member)
                             VALUES ($1, $2, $3)
@@ -67,7 +67,7 @@ module.exports = (passport, db) => {
                         user.username = profile.username;
                         user.discord = profile.id;
                         user.member = member;
-                    } else {
+                    } else if (!user) {
                         await db.none(`
                             INSERT INTO "user" (username, discord_id, is_member)
                             VALUES ($1, $2)

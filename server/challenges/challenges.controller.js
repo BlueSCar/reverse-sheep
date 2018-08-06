@@ -157,7 +157,12 @@ module.exports = (db) => {
                         })
                     });
                 } else {
-                    res.send(null);
+                    res.send({
+                        user: {
+                            id: req.user.id,
+                            username: req.user.username
+			   }
+                        });
                 }
             } else {
                 res.sendStatus(401);

@@ -1,6 +1,6 @@
 <template>
   <b-container>
-    <div v-if='challenges'>
+    <div v-if='showChallenges'>
       <h3 class='justify-content-center'>
         {{user.username}}
         <small class="text-muted">Week {{week}}</small>
@@ -20,11 +20,11 @@
         </b-row>
       </b-form>
     </div>
-    <div v-if='!challenges'>
+    <div v-else>
       <h3 class='justify-content-center'>
         {{user.username}}
       </h3>
-      <b-alert>No challenges submitted yet for this week. Please check back later.</b-alert>
+      <b-alert show>No challenges submitted yet for this week. Please check back later.</b-alert>
     </div>
   </b-container>
 </template>
@@ -35,6 +35,11 @@
   export default {
     components: {
       "challenge-edit": ChallengeEdit
+    },
+    computed: {
+        showChallenges: function () {
+            return this.challenges && this.challenges.length > 0;
+        }
     },
     data() {
       return {
