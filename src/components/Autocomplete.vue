@@ -22,6 +22,11 @@
                 required: false,
                 default: () => [],
             },
+            maxResults: {
+                type: Number,
+                required: false,
+                default: 10
+            },
             displayProp: {
                 type: String,
                 require: false,
@@ -93,7 +98,7 @@
                     }
 
                     return searchable.toLowerCase().indexOf(this.search.toLowerCase()) > -1;
-                });
+                }).slice(0, this.maxResults);
             },
             setResult(result) {
                 this.search = this.displayProp ? result[this.displayProp] : result;
@@ -159,12 +164,11 @@
         padding: 0;
         margin: 0;
         border: 1px solid #eeeeee;
-        height: 200px;
         overflow: auto;
         position: absolute;
         z-index: 1;
         background: #FFF;
-        width: 93%;
+        width: 100%;
     }
 
     .autocomplete-result {
