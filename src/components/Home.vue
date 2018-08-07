@@ -37,9 +37,9 @@
       "challenge-edit": ChallengeEdit
     },
     computed: {
-        showChallenges: function () {
-            return this.challenges && this.challenges.length > 0;
-        }
+      showChallenges: function () {
+        return this.challenges && this.challenges.length > 0;
+      }
     },
     data() {
       return {

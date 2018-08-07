@@ -161,8 +161,8 @@ module.exports = (db) => {
                         user: {
                             id: req.user.id,
                             username: req.user.username
-			   }
-                        });
+                        }
+                    });
                 }
             } else {
                 res.sendStatus(401);
