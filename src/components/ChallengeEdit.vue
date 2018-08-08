@@ -1,14 +1,12 @@
 <template>
-    <b-row>
-        <b-col></b-col>
-        <b-col>
-            <h5>{{challenge.text}}</h5>
+    <b-row class='challenge-edit'>
+        <b-col lg='8' md='12'>
+            <p class='text-left'>{{challenge.text}}</p>
         </b-col>
-        <b-col>
-        <autocomplete :initialSelected="challenge.userResponse.id" :initialDisplay="challenge.userResponse.text" :items="challenge.responses"
-            displayProp="text" valueProp="id" @selection="onItemChanged" isRequired=true></autocomplete>
+        <b-col lg='4' md='12'>
+            <autocomplete :initialSelected="challenge.userResponse.id" :initialDisplay="challenge.userResponse.text" :items="challenge.responses"
+                displayProp="text" valueProp="id" @selection="onItemChanged" isRequired=true></autocomplete>
         </b-col>
-        <b-col class='col'></b-col>
     </b-row>
 </template>
 
@@ -32,4 +30,7 @@
 </script>
 
 <style lang="scss">
+    .challenge-edit {
+        margin-top: 30px;
+    }
 </style>
