@@ -24,7 +24,7 @@
     display: table;
     width: 100%;
     height: 100%;
-    background: url("./assets/bg_chess.jpg") no-repeat center center scroll;
+    background: url("./assets/bg_chess.jpg") no-repeat center center fixed;
     -moz-background-size: cover;
     -o-background-size: cover;
     background-size: cover;
