@@ -81,7 +81,7 @@ module.exports = (db) => {
                             LEFT JOIN user_responses ur ON c.id = ur.challenge_id AND u.id = ur.user_id
                             LEFT JOIN scores s ON s.response_id = ur.response_id
                         GROUP BY u.username
-                        ORDER BY points
+                        ORDER BY points, u.username
                     `, [req.query.week]);
 
                     res.send({
@@ -130,7 +130,7 @@ module.exports = (db) => {
                             LEFT JOIN user_responses ur ON c.id = ur.challenge_id AND u.id = ur.user_id
                             LEFT JOIN scores s ON s.response_id = ur.response_id
                         GROUP BY u.username
-                        ORDER BY points
+                        ORDER BY points, u.username
                     `);
 
                     res.send({
@@ -251,7 +251,7 @@ module.exports = (db) => {
                         FROM user_responses
                         GROUP BY challenge
                     )
-                    SELECT c.id, c.text as challenge, cr.text as response, COALESCE(cr.points, cp.max_points) as points, COALESCE(cr.correct, false) as correct
+                    SELECT c.id, c.text as challenge, cr.text as response, COALESCE(cr.correct, false) as correct
                     FROM round r
                         INNER JOIN challenge c ON r.id = c.round_id
                         INNER JOIN challenge_points cp ON c.id = cp.challenge

@@ -24,7 +24,7 @@
                 username: "",
                 weeks: [],
                 responses: [],
-                fields: ['challenge', 'response', 'correct', 'points']
+                fields: ['challenge', 'response', 'correct']
             }
         },
         computed: {

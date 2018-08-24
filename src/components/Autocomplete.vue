@@ -1,6 +1,6 @@
 <template>
     <div class="autocomplete">
-        <input class='form-control' type="text" @focus="onFocus" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.enter="onEnter" :required="isRequired" />
+        <input class='form-control' type="text" placeholder="Start typing to get suggestions..." @focus="onFocus" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.enter="onEnter" :required="isRequired" />
         <ul id="autocomplete-results" v-show="isOpen" class="autocomplete-results">
             <li class="loading" v-if="isLoading">
                 Loading results...
