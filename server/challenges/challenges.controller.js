@@ -239,7 +239,7 @@ module.exports = (db) => {
                 let responses = await db.any(`
                     WITH challenge_points AS (
                         WITH user_responses AS (
-                            SELECT c.id as challenge, COALESCE(cr.correct, false) as correct, COUNT(ucr.id) as total
+                            SELECT c.id as challenge, cr.correct as correct, COUNT(ucr.id) as total
                             FROM round r
                                 INNER JOIN challenge c ON r.id = c.round_id
                                 INNER JOIN challenge_response cr ON c.id = cr.challenge_id
