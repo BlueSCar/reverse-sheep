@@ -24,7 +24,7 @@
       <h3 class='justify-content-center'>
         {{user.username}}
       </h3>
-      <b-alert show>No challenges submitted yet for this week. Please check back later.</b-alert>
+      <b-alert show>Submissions have been locked for this week. Please check back later for new questions.</b-alert>
     </div>
   </b-container>
 </template>
