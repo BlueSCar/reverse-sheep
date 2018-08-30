@@ -277,7 +277,7 @@ module.exports = (db) => {
                         LEFT JOIN user_responses ur ON c.id = ur.challenge_id AND u.id = ur.user_id
                         LEFT JOIN scores s ON s.response_id = ur.response_id
                     WHERE r.week = $1 AND u.id = $2
-                    GROUP BY c.id, c.text, s.score, ur.correct, ur.text, r.deadline
+                    GROUP BY c.id, c.text, s.score, ur.correct, ur.text, r.deadline, s.users
                     ORDER BY c.id
                 `, [req.query.week, req.user.id]);
                 res.send({
