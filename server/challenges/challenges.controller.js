@@ -254,7 +254,7 @@ module.exports = (db) => {
                                 INNER JOIN response_counts rc ON cr.id = rc.response_id
                             GROUP BY c.id
                         )
-                        SELECT c.id as challenge_id, cr.id as response_id, ms.max_score as max_score, CASE WHEN cr.correct THEN COUNT(ucr.id) ELSE ms.max_score END AS score
+                        SELECT c.id as challenge_id, cr.id as response_id, ms.max_score as max_score, CASE WHEN cr.correct THEN COUNT(ucr.id) ELSE ms.max_score END AS score, COUNT(ucr.id) AS users
                         FROM round r
                             INNER JOIN challenge c ON r.id = c.round_id
                             INNER JOIN max_scores ms ON c.id = ms.id
@@ -270,7 +270,7 @@ module.exports = (db) => {
                             LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
                         WHERE r.week = $1
                     )
-                    SELECT c.id, c.text as challenge, ur.text as response, COALESCE(CASE WHEN s.score IS NOT NULL THEN s.score ELSE (SELECT max_score FROM scores WHERE challenge_id = c.id LIMIT 1) END, 0) AS points, ur.correct
+                    SELECT c.id, c.text as challenge, ur.text as response, COALESCE(CASE WHEN s.score IS NOT NULL THEN s.score ELSE (SELECT max_score FROM scores WHERE challenge_id = c.id LIMIT 1) END, 0) AS points, ur.correct, CASE WHEN deadline < (now() at time zone 'utc') THEN s.users ELSE null END AS picked
                     FROM round r
                         INNER JOIN challenge c ON r.id = c.round_id
                         INNER JOIN "user" u ON 1=1
