@@ -15,6 +15,7 @@ module.exports = (db) => {
                 INNER JOIN challenge c ON r.id = c.round_id
                 LEFT JOIN user_responses ur ON r.id = ur.round_id AND c.id = ur.challenge_id
             WHERE r.week = (SELECT MIN(week) FROM round WHERE deadline > (now() at time zone 'utc'))
+	    ORDER BY c.id
     `, [userId]);
     }
 
@@ -84,6 +85,11 @@ module.exports = (db) => {
                         ORDER BY points, u.username
                     `, [req.query.week]);
 
+
+		    for (let score of scoreboard) {
+			score.rank = scoreboard.filter(s => s.points * 1.0 < score.points * 1.0).length  + 1;
+		    }
+
                     res.send({
                         username: req.user.username,
                         scoreboard
@@ -132,6 +138,10 @@ module.exports = (db) => {
                         GROUP BY u.username
                         ORDER BY points, u.username
                     `);
+
+                    for (let score of scoreboard) {
+                        score.rank = scoreboard.filter(s => s.points * 1.0 < score.points * 1.0).length + 1;
+                    }
 
                     res.send({
                         username: req.user.username,

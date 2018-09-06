@@ -5,8 +5,8 @@
         </h3>
         <b-tabs pills vertical @input="refreshData">
             <b-tab v-for="week in weeks" :title="getTitle(week)" :key="week">
-                <div v-if='showScoreboard'>
-                    <b-table :items="scoreboard"></b-table>
+                <div v-if='showScoreboard' class='text-left'>
+                    <b-table :items="scoreboard" :fields="fields"></b-table>
                 </div>
                 <div v-else>
                     <b-alert variant='info' show>No score data yet</b-alert>
@@ -21,7 +21,8 @@
         data() {
             return {
                 weeks: [],
-                scoreboard: []
+                scoreboard: [],
+		fields: ['rank', 'username', 'points']
             }
         },
         computed: {
