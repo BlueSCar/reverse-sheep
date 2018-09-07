@@ -14,6 +14,9 @@
                     <b-nav-item>
                         <router-link to="/leaderboard">Leaderboard</router-link>
                     </b-nav-item>
+                    <b-nav-item>
+                        <router-link to="/aces">Aces</router-link>
+                    </b-nav-item>
                 </b-navbar-nav>
             </b-collapse>
         </b-navbar>

@@ -7,4 +7,5 @@ module.exports = (app, db) => {
         .post(controller.submitUserResponses);
     app.route('/api/weeks').get(controller.getChallengeWeeks);
     app.route('/api/scoreboard').get(controller.getScoreboard);
+    app.route('/api/aces').get(controller.getAces);
 }

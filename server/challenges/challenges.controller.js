@@ -17,16 +17,16 @@ module.exports = (db) => {
             WHERE r.week = (SELECT MIN(week) FROM round WHERE deadline > (now() at time zone 'utc'))
 	    ORDER BY c.id
     `, [userId]);
-    }
+    };
 
     return {
         getChallengeWeeks: async (req, res) => {
             if (req.isAuthenticated()) {
                 let weeks = await db.any(`
-                SELECT DISTINCT week
-                FROM round
-                ORDER BY week DESC
-            `).catch(err => {
+                    SELECT DISTINCT week
+                    FROM round
+                    ORDER BY week DESC
+                `).catch(err => {
                     console.error(err);
                     res.sendStatus(500);
                 });
@@ -83,12 +83,12 @@ module.exports = (db) => {
                             LEFT JOIN scores s ON s.response_id = ur.response_id
                         GROUP BY u.username
                         ORDER BY points, u.username
-                    `, [req.query.week]);
+        `, [req.query.week]);
 
 
-		    for (let score of scoreboard) {
-			score.rank = scoreboard.filter(s => s.points * 1.0 < score.points * 1.0).length  + 1;
-		    }
+                    for (let score of scoreboard) {
+                        score.rank = scoreboard.filter(s => s.points * 1.0 < score.points * 1.0).length + 1;
+                    }
 
                     res.send({
                         username: req.user.username,
@@ -96,48 +96,48 @@ module.exports = (db) => {
                     });
                 } else {
                     scoreboard = await db.any(`
-                        WITH scores AS (
-                            WITH max_scores AS (
-                                WITH response_counts AS (
-                                    SELECT c.id as challenge_id, cr.id as response_id, COALESCE(cr.correct, false) as correct, COUNT(ucr.id) AS total
-                                    FROM round r
-                                        INNER JOIN challenge c ON r.id = c.round_id
-                                        INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                                        LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
-                                    WHERE r.deadline < (now() at time zone 'utc')
-                                    GROUP BY c.id, cr.id, cr.correct
-                                )
-                                SELECT c.id, (COALESCE(MAX(rc.total) FILTER(WHERE rc.correct), 0) + COUNT(*) FILTER(WHERE cr.correct)) as max_score
-                                FROM challenge c
-                                    INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                                    INNER JOIN response_counts rc ON cr.id = rc.response_id
-                                GROUP BY c.id
-                            )
-                            SELECT c.id as challenge_id, cr.id as response_id, ms.max_score as max_score, CASE WHEN cr.correct THEN COUNT(ucr.id) ELSE ms.max_score END AS score
-                            FROM round r
-                                INNER JOIN challenge c ON r.id = c.round_id
-                                INNER JOIN max_scores ms ON c.id = ms.id
-                                INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                                LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
-                            WHERE r.deadline < (now() at time zone 'utc')
-                            GROUP BY c.id, cr.id, ms.max_score
-                        ), user_responses AS (
-                            SELECT c.id as challenge_id, cr.id as response_id, ucr.user_id as user_id
-                            FROM round r
-                                INNER JOIN challenge c ON r.id = c.round_id
-                                INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                                LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
-                            WHERE r.deadline < (now() at time zone 'utc')
-                        )
-                        SELECT u.username, SUM(COALESCE(CASE WHEN s.score IS NOT NULL THEN s.score ELSE (SELECT max_score FROM scores WHERE challenge_id = c.id LIMIT 1) END, 0)) AS points
+            WITH scores AS (
+                WITH max_scores AS (
+                    WITH response_counts AS (
+                        SELECT c.id as challenge_id, cr.id as response_id, COALESCE(cr.correct, false) as correct, COUNT(ucr.id) AS total
                         FROM round r
                             INNER JOIN challenge c ON r.id = c.round_id
-                            INNER JOIN "user" u ON 1=1
-                            LEFT JOIN user_responses ur ON c.id = ur.challenge_id AND u.id = ur.user_id
-                            LEFT JOIN scores s ON s.response_id = ur.response_id
-                        GROUP BY u.username
-                        ORDER BY points, u.username
-                    `);
+                            INNER JOIN challenge_response cr ON c.id = cr.challenge_id
+                            LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
+                        WHERE r.deadline < (now() at time zone 'utc')
+                        GROUP BY c.id, cr.id, cr.correct
+                    )
+                    SELECT c.id, (COALESCE(MAX(rc.total) FILTER(WHERE rc.correct), 0) + COUNT(*) FILTER(WHERE cr.correct)) as max_score
+                    FROM challenge c
+                        INNER JOIN challenge_response cr ON c.id = cr.challenge_id
+                        INNER JOIN response_counts rc ON cr.id = rc.response_id
+                    GROUP BY c.id
+                )
+                SELECT c.id as challenge_id, cr.id as response_id, ms.max_score as max_score, CASE WHEN cr.correct THEN COUNT(ucr.id) ELSE ms.max_score END AS score
+                FROM round r
+                    INNER JOIN challenge c ON r.id = c.round_id
+                    INNER JOIN max_scores ms ON c.id = ms.id
+                    INNER JOIN challenge_response cr ON c.id = cr.challenge_id
+                    LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
+                WHERE r.deadline < (now() at time zone 'utc')
+                GROUP BY c.id, cr.id, ms.max_score
+            ), user_responses AS (
+                SELECT c.id as challenge_id, cr.id as response_id, ucr.user_id as user_id
+                FROM round r
+                    INNER JOIN challenge c ON r.id = c.round_id
+                    INNER JOIN challenge_response cr ON c.id = cr.challenge_id
+                    LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
+                WHERE r.deadline < (now() at time zone 'utc')
+            )
+            SELECT u.username, SUM(COALESCE(CASE WHEN s.score IS NOT NULL THEN s.score ELSE (SELECT max_score FROM scores WHERE challenge_id = c.id LIMIT 1) END, 0)) AS points
+            FROM round r
+                INNER JOIN challenge c ON r.id = c.round_id
+                INNER JOIN "user" u ON 1=1
+                LEFT JOIN user_responses ur ON c.id = ur.challenge_id AND u.id = ur.user_id
+                LEFT JOIN scores s ON s.response_id = ur.response_id
+            GROUP BY u.username
+            ORDER BY points, u.username
+        `);
 
                     for (let score of scoreboard) {
                         score.rank = scoreboard.filter(s => s.points * 1.0 < score.points * 1.0).length + 1;
@@ -219,15 +219,15 @@ module.exports = (db) => {
 
                                 if (sr.user_challenge_response_id == null) {
                                     return t.none(`
-                                        INSERT INTO user_challenge_response (user_id, challenge_response_id)
-                                        VALUES ($1, $2)
-                                    `, [req.user.id, submitted.responseId]);
+                                                INSERT INTO user_challenge_response (user_id, challenge_response_id)
+                                                VALUES ($1, $2)
+                                            `, [req.user.id, submitted.responseId]);
                                 } else {
                                     return t.none(`
-                                        UPDATE user_challenge_response
-                                        SET challenge_response_id = $1
-                                        WHERE id = $2
-                                    `, [submitted.responseId, sr.user_challenge_response_id]);
+                                                UPDATE user_challenge_response
+                                                SET challenge_response_id = $1
+                                                WHERE id = $2
+                                            `, [submitted.responseId, sr.user_challenge_response_id]);
                                 }
                             })
                         ]);
@@ -296,6 +296,59 @@ module.exports = (db) => {
                 });
             } else {
                 res.sendStatus(403);
+            }
+        },
+        getAces: async (req, res) => {
+            if (req.isAuthenticated()){
+                let results = await db.any(`
+                    WITH aces AS (
+                        SELECT r.week, c.id as challenge_id, c.text as challenge, cr.id AS response_id, cr.text as response, COUNT(*)
+                        FROM round r
+                            INNER JOIN challenge c ON r.id = c.round_id
+                            INNER JOIN challenge_response cr ON c.id = cr.challenge_id
+                            INNER JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
+                            INNER JOIN "user" u ON ucr.user_id = u.id
+                        WHERE cr.correct = true
+                        GROUP BY r.week, c.id, c.text, cr.id, cr.text
+                        HAVING COUNT(*) = 1
+                    )
+                    SELECT u.username, a.week, a.challenge, a.response
+                    FROM aces a
+                        INNER JOIN user_challenge_response ucr ON a.response_id = ucr.challenge_response_id
+                        INNER JOIN "user" u ON ucr.user_id = u.id
+                    ORDER BY a.week, a.challenge_id, u.username
+                `);
+
+                let rounds = [];
+                let weeks = Array.from(new Set(results.map(r => r.week)));
+
+                for (let week of weeks) {
+                    let round = {
+                        week,
+                        challenges: []
+                    };
+
+                    let challenges = Array.from(new Set(results.filter(r => r.week == week).map(r => r.challenge)));
+                    for (let challenge of challenges) {
+                        let roundChallenge = {
+                            challenge,
+                            aces: results.filter(r => r.week == week && r.challenge == challenge).map(r => {
+                                return {
+                                    username: r.username,
+                                    response: r.response
+                                };
+                            })
+                        }
+
+                        round.challenges.push(roundChallenge);
+                    }
+
+                    rounds.push(round);
+                }
+
+                res.send(rounds);
+            } else {
+                res.sendStatus(401);
             }
         }
     };

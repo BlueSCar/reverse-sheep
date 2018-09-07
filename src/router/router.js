@@ -4,6 +4,7 @@ import Router from 'vue-router';
 import Home from '../components/Home.vue';
 import History from '../components/History.vue';
 import Leaderboard from '../components/Leaderboard.vue';
+import Aces from '../components/Aces.vue';
 
 Vue.use(Router);
 
@@ -21,6 +22,10 @@ export function createRouter() {
       {
         path: '/leaderboard',
         component: Leaderboard
+      },
+      {
+        path: '/aces',
+        component: Aces
       }
     ]
   });

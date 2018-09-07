@@ -22,7 +22,7 @@
             return {
                 weeks: [],
                 scoreboard: [],
-		fields: ['rank', 'username', 'points']
+                fields: ['rank', 'username', 'points']
             }
         },
         computed: {
