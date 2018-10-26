@@ -6,7 +6,11 @@
         <b-tabs pills vertical @input="refreshData">
             <b-tab v-for="week in weeks" :title="getTitle(week)" :key="week">
                 <div v-if='showScoreboard' class='text-left'>
-                    <b-table :items="scoreboard" :fields="fields"></b-table>
+                    <b-table :items="scoreboard" :fields="fields">
+                        <template slot="username" slot-scope="data">
+                            <router-link :to="encodeURI(`/history/${data.value}`)">{{data.value}}</router-link>
+                        </template>
+                    </b-table>
                 </div>
                 <div v-else>
                     <b-alert variant='info' show>No score data yet</b-alert>

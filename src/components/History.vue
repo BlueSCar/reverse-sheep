@@ -33,12 +33,17 @@
             }
         },
         created() {
-            this.$http.get('/api/weeks').then((response) => {
+            this.$http.get('/api/weeks', {
+                params: {
+                    username: this.$route.params.username
+                }
+            }).then((response) => {
                 this.weeks = response.data.map(d => d.week);
             }).then(r => {
                 this.$http.get('/api/responses', {
                     params: {
-                        week: this.weeks[0]
+                        week: this.weeks[0],
+                        username: this.$route.params.username
                     }
                 }).then((response) => {
                     this.username = response.data.username;
@@ -58,7 +63,8 @@
 
                     this.$http.get('/api/responses', {
                         params: {
-                            week: week
+                            week: week,
+                            username: this.$route.params.username
                         }
                     }).then((response) => {
                         this.username = response.data.username;

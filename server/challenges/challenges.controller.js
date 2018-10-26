@@ -22,9 +22,15 @@ module.exports = (db) => {
     return {
         getChallengeWeeks: async (req, res) => {
             if (req.isAuthenticated()) {
+                let where = '';
+                if (req.query && req.query.username && req.query.username.toLowerCase() != 'me') {
+                    where = `WHERE deadline < (now() at time zone 'utc')`;
+                }
+
                 let weeks = await db.any(`
                     SELECT DISTINCT week
                     FROM round
+                    ${where}
                     ORDER BY week DESC
                 `).catch(err => {
                     console.error(err);
@@ -246,6 +252,16 @@ module.exports = (db) => {
         },
         getUserResponses: async (req, res) => {
             if (req.isAuthenticated()) {
+                let params = [req.query.week];
+                let where = `WHERE r.week = $1 AND LOWER(u.username) = LOWER($2)`
+
+                if (req.query.username.toLowerCase() != 'me') {
+                    params.push(req.query.username);
+                    where += ` AND r.deadline < (now() at time zone 'utc')`;
+                } else {
+                    params.push(req.user.username);
+                }
+
                 let responses = await db.any(`
                     WITH scores AS (
                         WITH max_scores AS (
@@ -280,18 +296,18 @@ module.exports = (db) => {
                             LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
                         WHERE r.week = $1
                     )
-                    SELECT c.id, c.text as challenge, ur.text as response, COALESCE(CASE WHEN s.score IS NOT NULL THEN s.score ELSE (SELECT max_score FROM scores WHERE challenge_id = c.id LIMIT 1) END, 0) AS points, ur.correct, CASE WHEN deadline < (now() at time zone 'utc') THEN s.users ELSE null END AS picked
+                    SELECT u.username, c.id, c.text as challenge, ur.text as response, COALESCE(CASE WHEN s.score IS NOT NULL THEN s.score ELSE (SELECT max_score FROM scores WHERE challenge_id = c.id LIMIT 1) END, 0) AS points, ur.correct, CASE WHEN deadline < (now() at time zone 'utc') THEN s.users ELSE null END AS picked
                     FROM round r
                         INNER JOIN challenge c ON r.id = c.round_id
                         INNER JOIN "user" u ON 1=1
                         LEFT JOIN user_responses ur ON c.id = ur.challenge_id AND u.id = ur.user_id
                         LEFT JOIN scores s ON s.response_id = ur.response_id
-                    WHERE r.week = $1 AND u.id = $2
-                    GROUP BY c.id, c.text, s.score, ur.correct, ur.text, r.deadline, s.users
+                    ${where}
+                    GROUP BY u.username, c.id, c.text, s.score, ur.correct, ur.text, r.deadline, s.users
                     ORDER BY c.id
-                `, [req.query.week, req.user.id]);
+                `, params);
                 res.send({
-                    username: req.user.username,
+                    username: responses.length > 0 ? responses[0].username : '',
                     responses: responses
                 });
             } else {

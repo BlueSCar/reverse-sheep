@@ -16,7 +16,7 @@ export function createRouter() {
         component: Home
       },
       {
-        path: '/history',
+        path: '/history/:username',
         component: History
       },
       {
