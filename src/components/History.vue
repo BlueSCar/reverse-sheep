@@ -6,7 +6,7 @@
         </h3>
         <b-tabs pills vertical @input="refreshData">
             <b-tab v-for="week in weeks" :title="getTitle(week)" :key="week">
-                <div v-if='showHistory'>
+                <div v-if='showHistory' class='text-left'>
                     <b-table :items='responses' :fields='fields'></b-table>
                 </div>
                 <div v-else>
