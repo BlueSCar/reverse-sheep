@@ -25,7 +25,7 @@
             maxResults: {
                 type: Number,
                 required: false,
-                default: 10
+                default: 15
             },
             displayProp: {
                 type: String,
