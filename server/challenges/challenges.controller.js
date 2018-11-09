@@ -166,7 +166,7 @@ module.exports = (db) => {
                     SELECT c.id as challenge_id, cr.id as response_id, cr.text as response_text
                     FROM round r
                         INNER JOIN challenge c ON r.id = c.round_id
-                        INNER JOIN challenge_response cr ON c.id = cr.challenge_id
+                        INNER JOIN challenge_response cr ON c.id = cr.challenge_id and (cr.locked is null or cr.locked > (now() at time zone 'utc'))
                     WHERE r.week = (SELECT MAX(week) FROM round WHERE deadline > (now() at time zone 'utc'))
                     ORDER BY c.id, cr.id
                 `);
