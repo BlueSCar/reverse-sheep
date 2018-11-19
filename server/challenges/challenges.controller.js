@@ -48,47 +48,27 @@ module.exports = (db) => {
 
                 if (req.query.week) {
                     scoreboard = await db.any(`
-                        WITH scores AS (
-                            WITH max_scores AS (
-                                WITH response_counts AS (
-                                    SELECT c.id as challenge_id, cr.id as response_id, COALESCE(cr.correct, false) as correct, COUNT(ucr.id) AS total
-                                    FROM round r
-                                        INNER JOIN challenge c ON r.id = c.round_id
-                                        INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                                        LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
-                                    WHERE r.week = $1
-                                    GROUP BY c.id, cr.id, cr.correct
-                                )
-                                SELECT c.id, (COALESCE(MAX(rc.total) FILTER(WHERE rc.correct), 0) + COUNT(*) FILTER(WHERE cr.correct)) as max_score
-                                FROM challenge c
-                                    INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                                    INNER JOIN response_counts rc ON cr.id = rc.response_id
-                                GROUP BY c.id
-                            )
-                            SELECT c.id as challenge_id, cr.id as response_id, ms.max_score as max_score, CASE WHEN cr.correct THEN COUNT(ucr.id) ELSE ms.max_score END AS score
-                            FROM round r
-                                INNER JOIN challenge c ON r.id = c.round_id
-                                INNER JOIN max_scores ms ON c.id = ms.id
-                                INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                                LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
-                            WHERE r.week = $1
-                            GROUP BY c.id, cr.id, ms.max_score
-                        ), user_responses AS (
-                            SELECT c.id as challenge_id, cr.id as response_id, ucr.user_id as user_id
-                            FROM round r
-                                INNER JOIN challenge c ON r.id = c.round_id
-                                INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                                LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
-                            WHERE r.week = $1
+                        with user_selections as (
+                            select u.id as user_id, c.id as challenge_id, cr.points as points
+                            from "user" u
+                                inner join user_challenge_response ucr on u.id = ucr.user_id
+                                inner join challenge_response cr on ucr.challenge_response_id = cr.id
+                                inner join challenge c on cr.challenge_id = c.id and c.round_id = $1
+                        ), challenges as (
+                            select c.id, (
+                                max(cr.points) + count(cr.id)
+                            ) as points
+                            from challenge c
+                                inner join challenge_response cr on c.id = cr.challenge_id
+                            where cr.correct = true and c.round_id = $1
+                            group by c.id
                         )
-                        SELECT u.username, SUM(COALESCE(CASE WHEN s.score IS NOT NULL THEN s.score ELSE (SELECT max_score FROM scores WHERE challenge_id = c.id LIMIT 1) END, 0)) AS points
-                        FROM round r
-                            INNER JOIN challenge c ON r.id = c.round_id
-                            INNER JOIN "user" u ON 1=1
-                            LEFT JOIN user_responses ur ON c.id = ur.challenge_id AND u.id = ur.user_id
-                            LEFT JOIN scores s ON s.response_id = ur.response_id
-                        GROUP BY u.username
-                        ORDER BY points, u.username
+                        select u.username, SUM(COALESCE(us.points, c.points)) as points
+                        from challenges c
+                            inner join "user" u on 1=1
+                            left join user_selections us on us.user_id = u.id and us.challenge_id = c.id
+                        group by u.username
+                        order by points, u.username                          
         `, [req.query.week]);
 
 
@@ -102,47 +82,27 @@ module.exports = (db) => {
                     });
                 } else {
                     scoreboard = await db.any(`
-            WITH scores AS (
-                WITH max_scores AS (
-                    WITH response_counts AS (
-                        SELECT c.id as challenge_id, cr.id as response_id, COALESCE(cr.correct, false) as correct, COUNT(ucr.id) AS total
-                        FROM round r
-                            INNER JOIN challenge c ON r.id = c.round_id
-                            INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                            LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
-                        WHERE r.deadline < (now() at time zone 'utc')
-                        GROUP BY c.id, cr.id, cr.correct
-                    )
-                    SELECT c.id, (COALESCE(MAX(rc.total) FILTER(WHERE rc.correct), 0) + COUNT(*) FILTER(WHERE cr.correct)) as max_score
-                    FROM challenge c
-                        INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                        INNER JOIN response_counts rc ON cr.id = rc.response_id
-                    GROUP BY c.id
-                )
-                SELECT c.id as challenge_id, cr.id as response_id, ms.max_score as max_score, CASE WHEN cr.correct THEN COUNT(ucr.id) ELSE ms.max_score END AS score
-                FROM round r
-                    INNER JOIN challenge c ON r.id = c.round_id
-                    INNER JOIN max_scores ms ON c.id = ms.id
-                    INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                    LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
-                WHERE r.deadline < (now() at time zone 'utc')
-                GROUP BY c.id, cr.id, ms.max_score
-            ), user_responses AS (
-                SELECT c.id as challenge_id, cr.id as response_id, ucr.user_id as user_id
-                FROM round r
-                    INNER JOIN challenge c ON r.id = c.round_id
-                    INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                    LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
-                WHERE r.deadline < (now() at time zone 'utc')
-            )
-            SELECT u.username, SUM(COALESCE(CASE WHEN s.score IS NOT NULL THEN s.score ELSE (SELECT max_score FROM scores WHERE challenge_id = c.id LIMIT 1) END, 0)) AS points
-            FROM round r
-                INNER JOIN challenge c ON r.id = c.round_id
-                INNER JOIN "user" u ON 1=1
-                LEFT JOIN user_responses ur ON c.id = ur.challenge_id AND u.id = ur.user_id
-                LEFT JOIN scores s ON s.response_id = ur.response_id
-            GROUP BY u.username
-            ORDER BY points, u.username
+                        with user_selections as (
+                            select u.id as user_id, c.id as challenge_id, cr.points as points
+                            from "user" u
+                                inner join user_challenge_response ucr on u.id = ucr.user_id
+                                inner join challenge_response cr on ucr.challenge_response_id = cr.id
+                                inner join challenge c on cr.challenge_id = c.id
+                        ), challenges as (
+                            select c.id, (
+                                max(cr.points) + count(cr.id)
+                            ) as points
+                            from challenge c
+                                inner join challenge_response cr on c.id = cr.challenge_id
+                            where cr.correct = true
+                            group by c.id
+                        )
+                        select u.username, SUM(COALESCE(us.points, c.points)) as points
+                        from challenges c
+                            inner join "user" u on 1=1
+                            left join user_selections us on us.user_id = u.id and us.challenge_id = c.id
+                        group by u.username
+                        order by points, u.username                                
         `);
 
                     for (let score of scoreboard) {
@@ -253,58 +213,44 @@ module.exports = (db) => {
         getUserResponses: async (req, res) => {
             if (req.isAuthenticated()) {
                 let params = [req.query.week];
-                let where = `WHERE r.week = $1 AND LOWER(u.username) = LOWER($2)`
+                let where = `WHERE c.week = $1 AND LOWER(u.username) = LOWER($2)`
 
                 if (req.query.username.toLowerCase() != 'me') {
                     params.push(req.query.username);
-                    where += ` AND r.deadline < (now() at time zone 'utc')`;
+                    where += ` AND c.deadline < (now() at time zone 'utc')`;
                 } else {
                     params.push(req.user.username);
                 }
 
                 let responses = await db.any(`
-                    WITH scores AS (
-                        WITH max_scores AS (
-                            WITH response_counts AS (
-                                SELECT c.id as challenge_id, cr.id as response_id, COALESCE(cr.correct, false) as correct, COUNT(ucr.id) AS total
-                                FROM round r
-                                    INNER JOIN challenge c ON r.id = c.round_id
-                                    INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                                    LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
-                                WHERE r.week = $1
-                                GROUP BY c.id, cr.id, cr.correct
-                            )
-                            SELECT c.id, (COALESCE(MAX(rc.total) FILTER(WHERE rc.correct), 0) + COUNT(*) FILTER(WHERE cr.correct)) as max_score
-                            FROM challenge c
-                                INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                                INNER JOIN response_counts rc ON cr.id = rc.response_id
-                            GROUP BY c.id
-                        )
-                        SELECT c.id as challenge_id, cr.id as response_id, ms.max_score as max_score, CASE WHEN cr.correct THEN COUNT(ucr.id) ELSE ms.max_score END AS score, COUNT(ucr.id) AS users
-                        FROM round r
-                            INNER JOIN challenge c ON r.id = c.round_id
-                            INNER JOIN max_scores ms ON c.id = ms.id
-                            INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                            LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
-                        WHERE r.week = $1
-                        GROUP BY c.id, cr.id, ms.max_score
-                    ), user_responses AS (
-                        SELECT c.id as challenge_id, cr.id as response_id, cr.correct, ucr.user_id as user_id, cr.text as text
-                        FROM round r
-                            INNER JOIN challenge c ON r.id = c.round_id
-                            INNER JOIN challenge_response cr ON c.id = cr.challenge_id
-                            LEFT JOIN user_challenge_response ucr ON cr.id = ucr.challenge_response_id
-                        WHERE r.week = $1
+                    with user_selections as (
+                        select u.id as user_id, c.id as challenge_id, cr.id as response_id, cr.text, cr.points as points
+                        from "user" u
+                            inner join user_challenge_response ucr on u.id = ucr.user_id
+                            inner join challenge_response cr on ucr.challenge_response_id = cr.id
+                            inner join challenge c on cr.challenge_id = c.id
+                    ), challenges as (
+                        select r.week, r.deadline, c.id, c.text, (
+                            max(cr.points) + count(cr.id)
+                        ) as points
+                        from challenge c
+                            inner join challenge_response cr on c.id = cr.challenge_id
+                            inner join round r on c.round_id = r.id
+                        where cr.correct = true
+                        group by r.week, r.deadline, c.id
+                    ), responses as (
+                        select cr.id, cr.correct, count(*) as picked
+                        from challenge_response cr
+                            inner join user_challenge_response ucr on cr.id = ucr.challenge_response_id
+                        group by cr.id
                     )
-                    SELECT u.username, c.id, c.text as challenge, ur.text as response, COALESCE(CASE WHEN s.score IS NOT NULL THEN s.score ELSE (SELECT max_score FROM scores WHERE challenge_id = c.id LIMIT 1) END, 0) AS points, ur.correct, CASE WHEN deadline < (now() at time zone 'utc') THEN s.users ELSE null END AS picked
-                    FROM round r
-                        INNER JOIN challenge c ON r.id = c.round_id
-                        INNER JOIN "user" u ON 1=1
-                        LEFT JOIN user_responses ur ON c.id = ur.challenge_id AND u.id = ur.user_id
-                        LEFT JOIN scores s ON s.response_id = ur.response_id
+                    select u.username, c.id, c.text as challenge, us.text as response, coalesce(us.points, c.points) as points, r.correct, r.picked
+                    from challenges c
+                        inner join "user" u on 1=1
+                        left join user_selections us on us.user_id = u.id and us.challenge_id = c.id
+                        left join responses r on us.response_id = r.id
                     ${where}
-                    GROUP BY u.username, c.id, c.text, s.score, ur.correct, ur.text, r.deadline, s.users
-                    ORDER BY c.id
+                    order by c.id                            
                 `, params);
                 res.send({
                     username: responses.length > 0 ? responses[0].username : '',
@@ -315,7 +261,7 @@ module.exports = (db) => {
             }
         },
         getAces: async (req, res) => {
-            if (req.isAuthenticated()){
+            if (req.isAuthenticated()) {
                 let results = await db.any(`
                     WITH aces AS (
                         SELECT r.week, c.id as challenge_id, c.text as challenge, cr.id AS response_id, cr.text as response, COUNT(*)
