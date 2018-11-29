@@ -234,9 +234,8 @@ module.exports = (db) => {
                             max(cr.points) + count(cr.id)
                         ) as points
                         from challenge c
-                            inner join challenge_response cr on c.id = cr.challenge_id
-                            inner join round r on c.round_id = r.id
-                        where cr.correct = true
+                            left join challenge_response cr on c.id = cr.challenge_id and cr.correct = true
+                            left join round r on c.round_id = r.id
                         group by r.week, r.deadline, c.id
                     ), responses as (
                         select cr.id, cr.correct, count(*) as picked
